@@ -1,13 +1,53 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-let browserClient: ReturnType<typeof createClient> | undefined
+type QSenseDatabase = {
+  public: {
+    Tables: {
+      qsense_devices: {
+        Row: {
+          id: string
+          name: string
+          room: string
+          device_type: string
+          status: 'online' | 'warning' | 'offline'
+          reading: { value?: string; unit?: string }
+          updated_at: string
+          created_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      qsense_alerts: {
+        Row: {
+          id: string
+          device_id: string | null
+          title: string
+          description: string
+          severity: 'info' | 'warning' | 'critical'
+          resolved_at: string | null
+          created_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+    }
+    Views: Record<string, never>
+    Functions: Record<string, never>
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
+  }
+}
+
+let browserClient: SupabaseClient<QSenseDatabase> | undefined
 
 export function getSupabaseBrowserClient() {
   if (!browserClient) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     if (!url || !key) throw new Error('Supabase environment variables are missing.')
-    browserClient = createClient(url, key, { realtime: { params: { eventsPerSecond: 10 } } })
+    browserClient = createClient<QSenseDatabase>(url, key, { realtime: { params: { eventsPerSecond: 10 } } })
   }
   return browserClient
 }
