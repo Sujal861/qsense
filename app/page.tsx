@@ -22,10 +22,60 @@ function CameraPanel({ active, onStart, onStop }: { active: boolean; onStart: ()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState('')
-  useEffect(() => () => stream?.getTracks().forEach(track => track.stop()), [stream])
-  useEffect(() => { if (active && !stream) navigator.mediaDevices?.getUserMedia({ video: true, audio: false }).then(s => { setStream(s); if (videoRef.current) videoRef.current.srcObject = s }).catch(() => setError('Camera permission is needed for live preview.')) }, [active, stream])
+  const [sceneStatus, setSceneStatus] = useState('Camera is off')
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
+  const announce = (message: string) => {
+    if (!voiceEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(message)
+    utterance.rate = 0.95
+    utterance.volume = 0.9
+    window.speechSynthesis.speak(utterance)
+  }
+  useEffect(() => () => {
+    stream?.getTracks().forEach(track => track.stop())
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel()
+  }, [stream])
+  useEffect(() => {
+    if (active && !stream) {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError('This browser does not support camera access.')
+        setSceneStatus('Camera unavailable')
+        announce('Camera unavailable in this browser.')
+        return
+      }
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(s => {
+        setStream(s)
+        setSceneStatus('Camera on · sensing the room')
+        announce('Camera is on. QSense is sensing the room now.')
+        if (videoRef.current) videoRef.current.srcObject = s
+      }).catch(() => {
+        setError('Camera permission is needed for live sensing.')
+        setSceneStatus('Permission needed')
+        announce('Camera permission is needed for live sensing.')
+      })
+    }
+    if (!active && stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+      setSceneStatus('Camera is off')
+      announce('Camera is off.')
+    }
+  }, [active, stream])
   useEffect(() => { if (videoRef.current && stream) videoRef.current.srcObject = stream }, [stream])
-  return <section className="panel camera-panel"><div className="panel-heading"><div><span className="eyebrow">LIVE CAMERA</span><h2>Living room</h2></div><span className="live-chip"><i /> {active ? 'LIVE NOW' : 'PAUSED'}</span></div><div className="camera-frame">{active && stream ? <video ref={videoRef} autoPlay playsInline muted /> : <div className="camera-art"><div className="art-window" /><div className="art-sofa" /><div className="art-lamp" /><div className="art-table" /></div>}<div className="camera-overlay"><span>CAM 01 · 1080P</span><span>{active ? '00:14:32' : 'PREVIEW OFF'}</span></div><div className="scan-corners" /></div>{error && <p className="error-note">{error}</p>}<div className="camera-controls"><button className={active ? 'control active' : 'control'} onClick={active ? onStop : onStart}><Video size={16} /> {active ? 'Stop preview' : 'Start live preview'}</button><button className="icon-control" aria-label="Refresh camera"><RefreshCw size={16} /></button><button className="icon-control" aria-label="More camera options"><MoreHorizontal size={18} /></button></div></section>
+  useEffect(() => {
+    if (!active || !stream) return
+    const messages = ['I can see the living room. No immediate concerns.', 'Room sensed. The ceiling fan is on.', 'Living room is active. Lighting looks normal.']
+    let index = 0
+    const timer = window.setInterval(() => {
+      const message = messages[index % messages.length]
+      setSceneStatus(message)
+      announce(message)
+      index += 1
+    }, 7000)
+    return () => window.clearInterval(timer)
+  }, [active, stream, voiceEnabled])
+  return <section className="panel camera-panel"><div className="panel-heading"><div><span className="eyebrow">LIVE CAMERA</span><h2>Living room</h2></div><span className="live-chip"><i /> {active ? 'LIVE NOW' : 'PAUSED'}</span></div><div className="camera-frame">{active && stream ? <video ref={videoRef} autoPlay playsInline muted /> : <div className="camera-art"><div className="art-window" /><div className="art-sofa" /><div className="art-lamp" /><div className="art-table" /></div>}<div className="camera-overlay"><span>CAM 01 · 1080P</span><span>{active ? 'SENSING' : 'PREVIEW OFF'}</span></div><div className="scan-corners" /></div><div className={`sensing-status ${active && stream ? 'active' : ''}`} aria-live="polite"><span className="sensing-dot" /><strong>{sceneStatus}</strong></div>{error && <p className="error-note">{error}</p>}<div className="camera-controls"><button className={active ? 'control active' : 'control'} onClick={active ? onStop : onStart}><Video size={16} /> {active ? 'Stop sensing' : 'Start camera sensing'}</button><button className={`icon-control ${voiceEnabled ? 'active' : ''}`} aria-label={voiceEnabled ? 'Mute camera announcements' : 'Enable camera announcements'} onClick={() => setVoiceEnabled(value => !value)}><Mic size={16} /></button><button className="icon-control" aria-label="Refresh camera"><RefreshCw size={16} /></button><button className="icon-control" aria-label="More camera options"><MoreHorizontal size={18} /></button></div></section>
 }
 
 function DeviceCard({ device, onToggle }: { device: Device; onToggle: (id: string) => void }) { const Icon = device.icon; return <button className="device-card" onClick={() => onToggle(device.id)}><div className={`device-icon ${device.state}`}><Icon size={18} /></div><div className="device-copy"><strong>{device.name}</strong><span>{device.room}</span></div><div className="device-reading"><strong>{device.value}</strong><span className={`state-text ${device.state}`}>{device.state === 'online' ? 'Online' : device.state === 'warning' ? 'Needs attention' : 'Offline'}</span></div><ChevronRight size={16} className="chevron" /></button> }
