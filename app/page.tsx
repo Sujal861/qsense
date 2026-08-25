@@ -1,47 +1,41 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import { ArrowLeft, ArrowUpRight, Check, ChevronRight, CircleHelp, Home, LockKeyhole, Mic, Moon, ScanLine, Settings2, ShieldCheck, Sparkles, Wind, Wifi, X } from 'lucide-react'
+
+type View = 'splash' | 'home' | 'scan' | 'understanding' | 'status' | 'actions' | 'assistant' | 'extend' | 'privacy'
+type Issue = { id: string; name: string; status: string; detail: string; recommendation: string; visual: string }
+
+const issues: Issue[] = [
+  { id: 'window', name: 'Window', status: 'OPEN', detail: 'The living room window is open.', recommendation: 'Close it before you leave to keep your home secure.', visual: 'window' },
+  { id: 'fan', name: 'Ceiling fan', status: 'ON', detail: 'Your ceiling fan is still running.', recommendation: 'Turn it off to save energy while you are away.', visual: 'fan' },
+  { id: 'tv', name: 'Television', status: 'OFF', detail: 'The television is switched off.', recommendation: 'Everything looks good here.', visual: 'tv' },
+]
+
+function Label({ children }: { children: React.ReactNode }) { return <span className="label">{children}</span> }
+function BigButton({ children, onClick, secondary = false }: { children: React.ReactNode; onClick: () => void; secondary?: boolean }) { return <button className={secondary ? 'big-button secondary' : 'big-button'} onClick={onClick}>{children}<ArrowUpRight size={18} /></button> }
+function TopBar({ title, back, onBack, onPrivacy }: { title: string; back?: boolean; onBack?: () => void; onPrivacy?: () => void }) { return <header className="topbar">{back ? <button className="icon-button" aria-label="Go back" onClick={onBack}><ArrowLeft size={19} /></button> : <div className="mini-mark">Q</div>}<span className="top-title">{title}</span><button className="icon-button" aria-label="Privacy" onClick={onPrivacy}><LockKeyhole size={17} /></button></header> }
+function Shell({ children, view, setView }: { children: React.ReactNode; view: View; setView: (v: View) => void }) { return <div className="stage"><div className="phone"><div className="statusbar"><span>9:41</span><span>● ◒ ▮</span></div>{children}<nav className="bottom-nav"><button className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}><Home size={18} /><span>Home</span></button><button className={view === 'scan' ? 'active' : ''} onClick={() => setView('scan')}><ScanLine size={18} /><span>Scan</span></button><button onClick={() => setView('extend')}><Wifi size={18} /><span>Extend</span></button></nav></div></div> }
+function Visual({ kind }: { kind: string }) { return <div className={`visual ${kind}`}><div className="sun"></div><div className="window-pane"></div><div className="sofa"></div><div className="table"></div><div className="plant"></div><div className="fan-blades"><span></span><span></span><span></span></div><div className="tv-screen"></div></div> }
+
 export default function Page() {
-  return (
-    <main
-      style={{
-        colorScheme: 'light dark',
-        position: 'relative',
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'light-dark(#fff, #000)',
-        color: 'light-dark(#000, #fff)',
-      }}
-    >
-      <svg
-        aria-hidden="true"
-        style={{ width: 80, height: 80 }}
-        width={80}
-        height={80}
-        fill="none"
-        viewBox="0 0 20 20"
-        xmlns="http://www.w3.org/2000/svg"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      >
-        <path
-          d="M14.2 14.2H17V6.9375C17 4.76288 15.2371 3 13.0625 3H5.8V5.8M14.2 14.2V7.79063L7.79062 14.2H14.2ZM14.2 14.2V17H6.9375C4.76288 17 3 15.2371 3 13.0625V5.8H5.8M5.8 5.8V12.2313L12.2313 5.8H5.8Z"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <p
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: 'calc(50% + 56px)',
-          transform: 'translateX(-50%)',
-          whiteSpace: 'nowrap',
-          fontSize: '14px',
-          fontWeight: 500,
-          color: 'light-dark(#71717a, #a1a1aa)',
-        }}
-      >
-        Your v0 generation will show here.
-      </p>
-    </main>
-  )
+  const [view, setView] = useState<View>('splash')
+  const [resolved, setResolved] = useState<string[]>([])
+  const [privacy, setPrivacy] = useState([true, true, false])
+  const [scanStep, setScanStep] = useState(0)
+  const activeIssues = useMemo(() => issues.filter(i => !resolved.includes(i.id)), [resolved])
+  const go = (v: View) => setView(v)
+
+  if (view === 'splash') return <main className="splash"><div className="grain"></div><div className="splash-nav"><span className="wordmark">QSENSE<span>®</span></span><Label>HOME INTELLIGENCE / 01</Label></div><div className="splash-copy"><p className="eyebrow">AWARENESS, AMPLIFIED</p><h1>SEE.<br /><i>UNDERSTAND.</i><br />ACT.</h1><p className="intro">QSense sees what you miss, understands what matters, and helps your home take care of itself.</p><button className="begin" onClick={() => go('home')}>BEGIN <ArrowUpRight size={20} /></button></div><div className="orbit"><div className="orbit-core">Q</div></div><div className="splash-foot"><span>01—03</span><span>YOUR HOME, IN FOCUS.</span><span>© QSENSE LABS</span></div></main>
+
+  return <Shell view={view} setView={go}><TopBar title={view === 'home' ? 'QSense / Home' : view.toUpperCase()} back={view !== 'home'} onBack={() => go(view === 'status' ? 'home' : view === 'actions' ? 'status' : 'home')} onPrivacy={() => go('privacy')} />
+    {view === 'home' && <section className="screen home-screen"><div className="home-hero"><Label>MONDAY / 08:42 PM</Label><h2>GOOD EVENING,<br /><em>READY WHEN<br />YOU ARE.</em></h2><button className="scan-orb" onClick={() => { setScanStep(0); go('scan') }}><ScanLine size={28} /><span>SCAN<br />YOUR<br />SPACE</span><small>01</small></button></div><div className="awareness"><Label>TODAY&apos;S AWARENESS</Label><h3>{activeIssues.length} <span>things need<br />attention</span></h3><div className="tiny-rule"></div><p>Last checked <strong>8:39 PM</strong><br />Your home is listening.</p></div><div className="ask"><div><Sparkles size={15} /><span>ASK QSENSE</span></div><p>“QSense, I&apos;m leaving”</p><button onClick={() => go('assistant')}><Mic size={17} /></button></div></section>}
+    {view === 'scan' && <section className="screen scan-screen"><div className="scan-head"><Label>LIVE ENVIRONMENT SCAN</Label><span className="live-dot">LIVE</span></div><div className="camera"><Visual kind="room" /><div className="scan-line"></div><div className="bracket window-bracket"><b>WINDOW</b><span>OPEN / ATTENTION</span></div><div className="bracket fan-bracket"><b>CEILING FAN</b><span>ON / ATTENTION</span></div><div className="bracket tv-bracket"><b>TELEVISION</b><span>OFF / SAFE</span></div><div className="camera-corner">Q / CAM 01</div></div><div className="scan-status"><span>{scanStep < 2 ? 'MOVING THROUGH YOUR SPACE' : 'SCAN COMPLETE'}</span><strong>{scanStep < 2 ? `0${scanStep + 1} / 03` : '03 / 03'}</strong></div><button className="scan-continue" onClick={() => scanStep < 2 ? setScanStep(scanStep + 1) : go('understanding')}>{scanStep < 2 ? 'CONTINUE SCANNING' : 'UNDERSTAND RESULTS'} <ChevronRight size={18} /></button></section>}
+    {view === 'understanding' && <section className="screen understanding"><Label>QSENSE AI / PROCESSING</Label><div className="morph"><span>SEEING.</span><span>UNDERSTANDING.</span><span>REASONING.</span></div><div className="signal-grid"><div><Sparkles size={18} /><span>VISION</span></div><div><CircleHelp size={18} /><span>CONTEXT</span></div><div><Home size={18} /><span>LOCATION</span></div><div><Wind size={18} /><span>INTENT</span></div></div><div className="ai-statement"><p>I understand your<br /><em>home environment.</em></p><span>CHECKING WHAT NEEDS ATTENTION…</span></div><button className="next-link" onClick={() => go('status')}>VIEW HOME STATUS <ArrowUpRight size={18} /></button></section>}
+    {view === 'status' && <section className="screen status-screen"><Label>MONDAY / HOME CHECK COMPLETE</Label><h2>YOUR HOME<br /><em>IS TALKING.</em></h2><div className="count-row"><div><strong>{issues.length - activeIssues.length}</strong><span>SAFE</span></div><div className="count-accent"><strong>{activeIssues.length}</strong><span>ATTENTION</span></div><p>QSense found<br />{activeIssues.length ? 'a few things to check.' : 'nothing to worry about.'}</p></div><div className="status-list">{issues.map(i => <button key={i.id} className="status-row" onClick={() => i.id !== 'tv' && go('actions')}><span className={`status-glyph ${resolved.includes(i.id) || i.id === 'tv' ? 'safe' : 'warn'}`}>{resolved.includes(i.id) || i.id === 'tv' ? <Check size={15} /> : '!'}</span><span><b>{i.name}</b><small>{resolved.includes(i.id) || i.id === 'tv' ? 'ALL CLEAR' : i.status + ' / CHECK NEEDED'}</small></span><ChevronRight size={17} /></button>)}</div><div className="quote">“A small thing now is a<br /><em>better tomorrow.</em>”<span>— QSENSE</span></div><BigButton onClick={() => go('actions')}>REVIEW ISSUES <span className="button-count">{activeIssues.length}</span></BigButton><button className="text-button" onClick={() => go('home')}>I&apos;M GOOD TO GO</button></section>}
+    {view === 'actions' && <section className="screen actions-screen"><Label>ACTION CENTER / {activeIssues.length} OPEN</Label><h2>WHAT WOULD<br /><em>YOU LIKE TO DO?</em></h2><div className="action-list">{issues.map(i => { const done = resolved.includes(i.id) || i.id === 'tv'; return <div className={`action-card ${done ? 'done' : ''}`} key={i.id}><div className="action-top"><span className="status-glyph">{done ? <Check size={14} /> : '!'}</span><Label>{done ? 'RESOLVED' : 'NEEDS ATTENTION'}</Label></div><h3>{i.name}</h3><p>{done ? 'Everything looks good here.' : i.recommendation}</p>{!done && <div className="action-actions"><button onClick={() => go('status')}>CHECK NOW</button><button onClick={() => setResolved([...resolved, i.id])}>MARK AS CHECKED <Check size={15} /></button></div>}</div>})}</div><button className="next-link" onClick={() => go('home')}>RETURN HOME <ArrowLeft size={17} /></button></section>}
+    {view === 'assistant' && <section className="screen assistant"><Label>QSENSE ASSISTANT / LISTENING</Label><div className="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h2>“I&apos;M<br /><em>LEAVING.</em>”</h2><div className="chat"><p><span>YOU</span> QSense, I&apos;m leaving</p><p><span>QSENSE</span>Got it. I&apos;ll make sure everything is in order.</p><p><span>QSENSE</span>I found {activeIssues.length} thing{activeIssues.length === 1 ? '' : 's'} worth your attention.</p></div><BigButton onClick={() => go('status')}>SHOW ME <ArrowUpRight size={18} /></BigButton></section>}
+    {view === 'extend' && <section className="screen extend"><Label>QSENSE / EXTEND</Label><h2>YOUR HOME,<br /><em>CONNECTED.</em></h2><p className="body-copy">QSense works beautifully on its own. Add optional devices when you want to act from anywhere.</p><div className="connect-diagram"><div className="diagram-node phone-node">PHONE</div><div className="diagram-line"></div><div className="diagram-node ai-node">QSENSE<br />AI</div><div className="diagram-line"></div><div className="diagram-node device-node">OPTIONAL<br />DEVICES</div></div><div className="device-list"><div><Wifi size={17} /><span>Smart lights<small>READY TO CONNECT</small></span><button>+</button></div><div><Wind size={17} /><span>Air quality<small>COMING SOON</small></span><button>+</button></div></div><BigButton secondary onClick={() => go('home')}>KEEP IT SIMPLE</BigButton></section>}
+    {view === 'privacy' && <section className="screen privacy"><Label>QSENSE / PRIVACY</Label><h2>YOUR HOME.<br /><em>YOUR CONTROL.</em></h2><p className="body-copy">Your environment belongs to you. QSense is built to see only what you choose to share.</p><div className="privacy-list">{['Camera scans','Awareness data','Connected devices'].map((x, idx) => <div key={x}><div><ShieldCheck size={18} /><span>{x}<small>{idx === 0 ? 'Only when you scan' : idx === 1 ? 'Stored privately on device' : 'Always optional'}</small></span></div><button className={`toggle ${privacy[idx] ? 'on' : ''}`} onClick={() => setPrivacy(privacy.map((p, i) => i === idx ? !p : p))}><i></i></button></div>)}</div><div className="privacy-note"><LockKeyhole size={16} /><span>Private by design.<br /><b>No selling. No surprises.</b></span></div><button className="next-link" onClick={() => go('home')}>BACK TO HOME <ArrowLeft size={17} /></button></section>}
+  </Shell>
 }

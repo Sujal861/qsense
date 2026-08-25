@@ -3,9 +3,9 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'QSense — See. Understand. Act.',
+  description: 'A multimodal AI that understands your home environment and helps you act on what matters.',
+  generator: 'QSense Labs',
   icons: {
     icon: [
       {
